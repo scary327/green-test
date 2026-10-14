@@ -1,8 +1,7 @@
-import { createHttpClient } from "./http";
-
+import { createHttpClient } from '@/api/http';
 
 export interface Credentials {
-  apiUrl: string; // например https://xxxx.api.green-api.com, берётся из консоли
+  apiUrl: string;
   idInstance: string;
   apiTokenInstance: string;
 }
@@ -44,8 +43,7 @@ export function createGreenApi({ apiUrl, idInstance, apiTokenInstance }: Credent
     deleteNotification: (receiptId: number) =>
       api.delete<{ result: boolean }>(path('deleteNotification', receiptId)),
 
-    getStateInstance: () =>
-      api.get<{ stateInstance: string }>(path('getStateInstance')),
+    getStateInstance: () => api.get<{ stateInstance: string }>(path('getStateInstance')),
   };
 }
 

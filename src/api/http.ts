@@ -18,7 +18,6 @@ export class HttpError extends Error {
   }
 }
 
-
 function buildUrl(baseUrl: string, path: string, query?: Query): string {
   const url = new URL(path.replace(/^\//, ''), baseUrl.replace(/\/?$/, '/'));
   if (query) {
@@ -62,8 +61,7 @@ export function createHttpClient(baseUrl: string) {
   }
 
   return {
-    get: <T>(path: string, options?: RequestOptions) =>
-      request<T>('GET', path, undefined, options),
+    get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, undefined, options),
     post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
       request<T>('POST', path, body, options),
     put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
