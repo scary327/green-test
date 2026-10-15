@@ -1,73 +1,87 @@
-# React + TypeScript + Vite
+# Telegram Chat · GREEN-API
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Тестовое задание на позицию «Фронтенд-разработчик React».
 
-Currently, two official plugins are available:
+Веб-интерфейс для отправки и получения текстовых сообщений в **Telegram** через [GREEN-API](https://green-api.com).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> В ТЗ указан мессенджер MAX с возможностью заменить его на WhatsApp или Telegram — в проекте используется **Telegram-инстанс** GREEN-API.
 
-## React Compiler
+## Возможности
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Вход по `idInstance` и `apiTokenInstance` с проверкой статуса инстанса
+- Создание чата по номеру телефона пользователя Telegram
+- Отправка текстовых сообщений — [`SendMessage`](https://green-api.com/telegram/docs/api/sending/SendMessage/)
+- Получение сообщений через HTTP API — `ReceiveNotification` / `DeleteNotification`
+- Загрузка списка чатов и истории переписки из Telegram-аккаунта
+- Светлая и тёмная тема (по системной настройке), адаптивная вёрстка
 
-## Expanding the ESLint configuration
+## Стек
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+React 19 · TypeScript · Vite · CSS Modules
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Без state-менеджеров и UI-библиотек — состояние на `useReducer`, запросы через тонкую обёртку над `fetch`.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Запуск
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+### Docker (рекомендуется)
+
+Требуется [Docker](https://docs.docker.com/get-docker/) с Compose.
+
+```bash
+git clone https://github.com/scary327/green-test.git
+cd green-test
+docker compose up --build
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Откройте http://localhost:8080
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+Остановить: `Ctrl+C` или `docker compose down`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+### Локально
+
+Требуется Node.js 24.15.0+ (версия указана в `.nvmrc`).
+
+```bash
+git clone https://github.com/scary327/green-test.git
+cd green-test
+npm ci
+npm run dev
+```
+
+Откройте http://localhost:5173
+
+Версии зависимостей зафиксированы в `package.json` и `package-lock.json` — используйте `npm ci`, а не `npm install`, чтобы установить их в точности.
+
+## Настройка инстанса GREEN-API
+
+1. Зарегистрируйтесь в [консоли GREEN-API](https://console.green-api.com) и создайте **Telegram**-инстанс
+2. Авторизуйте инстанс своим Telegram-аккаунтом — сообщения будут отправляться от его имени
+3. В настройках инстанса включите:
+   - **Получать уведомления о входящих сообщениях** (`incomingWebhook`)
+   - **Получать уведомления о сообщениях, отправленных с телефона** (`outgoingMessageWebhook`) — опционально, чтобы в чате появлялись сообщения, написанные из приложения Telegram
+4. Поле `webhookUrl` оставьте пустым — иначе уведомления не попадут в очередь HTTP API
+5. Скопируйте `apiUrl`, `idInstance` и `apiTokenInstance` в форму входа
+
+> Применение настроек на стороне GREEN-API может занять несколько минут.
+
+Для проверки понадобится второй Telegram-аккаунт: с него отвечаете на сообщения, отправленные из приложения.
+
+## Как это работает
+
+- **Получение сообщений** — long polling: `ReceiveNotification` с `receiveTimeout=20` держит запрос открытым до появления уведомления. Цикл строго последовательный: следующее уведомление запрашивается только после обработки и удаления текущего (`DeleteNotification`). Очередь отдаёт уведомления по одному, поэтому несколько сообщений подряд приходят последовательно.
+- **Только текст** — обрабатываются `textMessage` и `extendedTextMessage`, остальные типы уведомлений удаляются из очереди без отображения.
+- **chatId в Telegram** — это числовой ID пользователя, а не номер телефона. При создании чата номер преобразуется в `chatId` через `GetContactInfo`, иначе ответы собеседника попадали бы в отдельный чат.
+- **Хранение данных** — учётные данные хранятся в `localStorage` (или `sessionStorage` без «Запомнить меня»), список чатов кэшируется локально и синхронизируется с сервером при входе (`GetChats`, `GetChatHistory`).
+
+> Токен хранится на клиенте, так как по ТЗ пользователь вводит его в браузере, а API GREEN-API передаёт токен в URL запроса. Для production-сценария стоит использовать backend-прокси, который хранит токен на сервере.
+
+## Структура
+
+```
+src/
+  api/          # обёртка над fetch и методы GREEN-API
+  components/   # LoginForm, ChatPage, ChatList, ChatWindow, Message, Avatar
+  hooks/        # useChats — состояние чатов, usePolling — получение уведомлений
+  lib/          # редьюсер, работа с localStorage
+  types/
 ```
