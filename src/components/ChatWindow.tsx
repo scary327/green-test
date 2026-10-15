@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import type { Chat } from '@/types/chat';
 import { Message } from '@/components/Message';
 import styles from './Chat.module.css';
@@ -13,6 +13,18 @@ export function ChatWindow({ chat, onSend }: Props) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const dayFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
+
+  function dayLabel(ts: number) {
+    const date = new Date(ts * 1000);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === today.toDateString()) return 'Сегодня';
+    if (date.toDateString() === yesterday.toDateString()) return 'Вчера';
+    return dayFormat.format(date);
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,12 +59,20 @@ export function ChatWindow({ chat, onSend }: Props) {
 
   return (
     <section className={styles.window}>
-      <header className={styles.windowHeader}>{chat.chatId.split('@')[0]}</header>
+      <header className={styles.windowHeader}>{chat.name}</header>
 
       <div className={styles.messages}>
-        {chat.messages.map((m) => (
-          <Message key={m.id} message={m} />
-        ))}
+        {chat.messages.map((m, i) => {
+          const prev = chat.messages[i - 1];
+          const showDay = !prev || dayLabel(prev.timestamp) !== dayLabel(m.timestamp);
+          return (
+            <Fragment key={m.id}>
+              {showDay && <div className={styles.daySeparator}>{dayLabel(m.timestamp)}</div>}
+              <Message message={m} />
+            </Fragment>
+          );
+        })}
+
         <div ref={bottomRef} />
       </div>
 

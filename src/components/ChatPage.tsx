@@ -17,7 +17,7 @@ export function ChatPage({
   const active = chats.find((c) => c.chatId === activeChatId);
 
   return (
-    <div className={styles.layout}>
+    <div className={`${styles.layout} ${active ? styles.hasActive : ''}`}>
       <ChatList
         chats={chats}
         activeChatId={activeChatId}

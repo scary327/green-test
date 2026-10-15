@@ -1,12 +1,26 @@
+import type { Chat } from '@/types/chat';
 import type { ChatState } from '@/lib/chatReducer';
 import { initialChatState } from '@/lib/chatReducer';
 
 const key = (idInstance: string) => `green-api-chats:${idInstance}`;
 
+function normalizeChat(raw: Partial<Chat> & { chatId: string }): Chat {
+  return {
+    chatId: raw.chatId,
+    name: raw.name || raw.chatId,
+    messages: Array.isArray(raw.messages) ? raw.messages : [],
+  };
+}
+
 export function loadChats(idInstance: string): ChatState {
   try {
     const raw = localStorage.getItem(key(idInstance));
-    return raw ? (JSON.parse(raw) as ChatState) : initialChatState;
+    if (!raw) return initialChatState;
+    const parsed = JSON.parse(raw) as Partial<ChatState>;
+    return {
+      chats: (parsed.chats ?? []).filter((c) => c?.chatId).map(normalizeChat),
+      activeChatId: parsed.activeChatId ?? null,
+    };
   } catch {
     return initialChatState;
   }

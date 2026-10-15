@@ -8,8 +8,9 @@ export interface ChatState {
 export type ChatAction =
   | { type: 'ADD_CHAT'; chatId: string; name: string }
   | { type: 'SET_ACTIVE'; chatId: string }
-  | { type: 'ADD_MESSAGE'; chatId: string; message: Message }
-  | { type: 'SET_HISTORY'; chatId: string; messages: Message[] };
+  | { type: 'ADD_MESSAGE'; chatId: string; name?: string; message: Message }
+  | { type: 'SET_HISTORY'; chatId: string; messages: Message[] }
+  | { type: 'MERGE_CHATS'; chats: { chatId: string; name: string }[] };
 
 export const initialChatState: ChatState = { chats: [], activeChatId: null };
 
@@ -31,7 +32,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       if (chat?.messages.some((m) => m.id === action.message.id)) return state; // дубль
       const updated: Chat = {
         chatId: action.chatId,
-        name: chat?.name ?? action.chatId,
+        name: chat?.name ?? action.name ?? action.chatId,
         messages: [...(chat?.messages ?? []), action.message],
       };
       return {
@@ -50,6 +51,15 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           return { ...c, messages };
         }),
       };
+    }
+    case 'MERGE_CHATS': {
+      const local = new Map(state.chats.map((c) => [c.chatId, c]));
+      const fromServer = action.chats.map((s) => {
+        const existing = local.get(s.chatId);
+        local.delete(s.chatId);
+        return existing ? { ...existing, name: s.name || existing.name } : { ...s, messages: [] };
+      });
+      return { ...state, chats: [...local.values(), ...fromServer] };
     }
   }
 }

@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import type { GreenApi, HistoryMessage, Notification } from '@/api/greenApi';
 import { chatReducer } from '@/lib/chatReducer';
 import { usePolling } from '@/hooks/usePolling';
 import { loadChats, saveChats } from '@/lib/chatStorage';
 import type { Message } from '@/types/chat';
+
+const HISTORY_COUNT = 100;
 
 function extractText(n: Notification): string | null {
   const data = n.body.messageData;
@@ -12,26 +14,67 @@ function extractText(n: Notification): string | null {
 
 function historyToMessage(m: HistoryMessage): Message | null {
   const text = m.textMessage ?? m.extendedTextMessage?.text;
-  if (!text) return null; // фото, стикеры и т. п. пропускаем, по ТЗ только текст
+  if (!text) return null;
   return { id: m.idMessage, text, fromMe: m.type === 'outgoing', timestamp: m.timestamp };
 }
 
 export function useChats(api: GreenApi, idInstance: string) {
   const [state, dispatch] = useReducer(chatReducer, idInstance, loadChats);
+  const loadedHistory = useRef(new Set<string>());
 
   useEffect(() => {
     saveChats(idInstance, state);
   }, [idInstance, state]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .getChats(controller.signal)
+      .then((chats) =>
+        dispatch({
+          type: 'MERGE_CHATS',
+          chats: chats.map((c) => ({ chatId: c.chatId, name: c.name || c.username || c.chatId })),
+        }),
+      )
+      .catch((e) => {
+        if (!controller.signal.aborted) console.error(e);
+      });
+    return () => controller.abort();
+  }, [api]);
+
+  useEffect(() => {
+    const chatId = state.activeChatId;
+    if (!chatId || loadedHistory.current.has(chatId)) return;
+
+    const controller = new AbortController();
+    api
+      .getChatHistory(chatId, HISTORY_COUNT, controller.signal)
+      .then((history) => {
+        const messages = history.map(historyToMessage).filter((m): m is Message => m !== null);
+        dispatch({ type: 'SET_HISTORY', chatId, messages });
+        loadedHistory.current.add(chatId);
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) console.error(e);
+      });
+    return () => controller.abort();
+  }, [api, state.activeChatId]);
+
   const handleNotification = useCallback((n: Notification) => {
     const { typeWebhook, senderData, idMessage, timestamp } = n.body;
-    if (typeWebhook !== 'incomingMessageReceived' || !senderData || !idMessage) return;
+    const isIncoming = typeWebhook === 'incomingMessageReceived';
+    const isOutgoing =
+      typeWebhook === 'outgoingMessageReceived' || typeWebhook === 'outgoingAPIMessageReceived';
+    if ((!isIncoming && !isOutgoing) || !senderData || !idMessage) return;
+
     const text = extractText(n);
     if (!text) return;
+
     dispatch({
       type: 'ADD_MESSAGE',
       chatId: senderData.chatId,
-      message: { id: idMessage, text, fromMe: false, timestamp },
+      name: isIncoming ? senderData.senderName : undefined,
+      message: { id: idMessage, text, fromMe: isOutgoing, timestamp },
     });
   }, []);
 
@@ -60,19 +103,6 @@ export function useChats(api: GreenApi, idInstance: string) {
     },
     [api],
   );
-
-  const loadHistory = useCallback(
-    async (chatId: string) => {
-      const history = await api.getChatHistory(chatId);
-      const messages = history.map(historyToMessage).filter((m): m is Message => m !== null);
-      dispatch({ type: 'SET_HISTORY', chatId, messages });
-    },
-    [api],
-  );
-
-  useEffect(() => {
-    if (state.activeChatId) loadHistory(state.activeChatId).catch(console.error);
-  }, [state.activeChatId, loadHistory]);
 
   const selectChat = useCallback((chatId: string) => dispatch({ type: 'SET_ACTIVE', chatId }), []);
 

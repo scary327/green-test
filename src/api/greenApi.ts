@@ -42,6 +42,13 @@ export interface ContactInfo {
   username?: string;
 }
 
+export interface ChatInfo {
+  chatId: string;
+  name: string;
+  type: 'user' | 'bot' | 'group' | 'channel' | string;
+  username?: string;
+}
+
 export function createGreenApi({ apiUrl, idInstance, apiTokenInstance }: Credentials) {
   const api = createHttpClient(apiUrl);
   const path = (method: string, ...rest: (string | number)[]) =>
@@ -61,10 +68,12 @@ export function createGreenApi({ apiUrl, idInstance, apiTokenInstance }: Credent
       api.delete<{ result: boolean }>(path('deleteNotification', receiptId)),
 
     getStateInstance: () => api.get<{ stateInstance: string }>(path('getStateInstance')),
-    getChatHistory: (chatId: string, count = 100) =>
-      api.post<HistoryMessage[]>(path('getChatHistory'), { chatId, count }),
-
     getContactInfo: (chatId: string) => api.post<ContactInfo>(path('getContactInfo'), { chatId }),
+
+    getChats: (signal?: AbortSignal) => api.get<ChatInfo[]>(path('getChats'), { signal }),
+
+    getChatHistory: (chatId: string, count = 100, signal?: AbortSignal) =>
+      api.post<HistoryMessage[]>(path('getChatHistory'), { chatId, count }, { signal }),
   };
 }
 
