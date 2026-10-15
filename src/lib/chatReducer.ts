@@ -7,7 +7,7 @@ export interface ChatState {
 
 export type ChatAction =
   | { type: 'ADD_CHAT'; chatId: string; name: string }
-  | { type: 'SET_ACTIVE'; chatId: string }
+  | { type: 'SET_ACTIVE'; chatId: string | null }
   | { type: 'ADD_MESSAGE'; chatId: string; name?: string; message: Message }
   | { type: 'SET_HISTORY'; chatId: string; messages: Message[] }
   | { type: 'MERGE_CHATS'; chats: { chatId: string; name: string }[] };

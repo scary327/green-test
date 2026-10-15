@@ -26,7 +26,12 @@ export function ChatPage({
         onLogout={onLogout}
       />
       {active ? (
-        <ChatWindow chat={active} onSend={sendMessage} />
+        <ChatWindow
+          key={active.chatId}
+          chat={active}
+          onSend={sendMessage}
+          onBack={() => selectChat(null)}
+        />
       ) : (
         <div className={styles.empty}>Выберите чат или создайте новый</div>
       )}

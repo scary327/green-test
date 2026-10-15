@@ -104,7 +104,10 @@ export function useChats(api: GreenApi, idInstance: string) {
     [api],
   );
 
-  const selectChat = useCallback((chatId: string) => dispatch({ type: 'SET_ACTIVE', chatId }), []);
+  const selectChat = useCallback(
+    (chatId: string | null) => dispatch({ type: 'SET_ACTIVE', chatId }),
+    [],
+  );
 
   return { ...state, sendMessage, addChat, selectChat };
 }

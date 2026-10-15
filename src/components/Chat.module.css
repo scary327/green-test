@@ -198,6 +198,7 @@
   flex-direction: column;
   min-height: 0;
   background: var(--bg-secondary);
+  animation: fadeIn 0.15s ease-out;
 }
 
 .windowHeader {
@@ -208,6 +209,23 @@
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   font-weight: 600;
+}
+
+.windowTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backButton {
+  display: none;
+  margin-left: -8px;
+}
+
+.noMessages {
+  margin: auto;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
 .messages {
@@ -238,6 +256,10 @@
   border-radius: var(--radius);
   white-space: pre-wrap;
   word-break: break-word;
+  animation: messageIn 0.2s ease-out;
+}
+.message:last-child {
+  animation: messageIn 0.2s ease-out;
 }
 .mine {
   align-self: flex-end;
@@ -308,21 +330,26 @@
   color: var(--text-secondary);
 }
 
-.composer button {
+.sendButton {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
   height: 40px;
-  padding: 0 16px;
+  padding: 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: 50%;
   background: var(--accent);
   color: #fff;
-  font: inherit;
-  font-weight: 500;
   cursor: pointer;
 }
-.composer button:disabled {
+.sendButton:disabled {
   background: var(--bg-hover);
   color: var(--text-secondary);
   cursor: default;
+}
+.sendButton svg {
+  transform: translate(-1px, 1px);
 }
 
 /* ---------- mobile ---------- */
@@ -336,5 +363,47 @@
   }
   .layout:not(.hasActive) .window {
     display: none;
+  }
+  .backButton {
+    display: grid;
+  }
+  .windowHeader {
+    padding: 8px 12px;
+  }
+  .messages {
+    padding: 12px;
+  }
+  .message {
+    max-width: 85%;
+  }
+  .composer {
+    padding: 8px 12px;
+  }
+  .composer {
+    padding: 8px 12px;
+  }
+  .window {
+    animation: chatSlideIn 0.22s ease-out;
+  }
+}
+
+/* ---------- animations ---------- */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes chatSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
 }
