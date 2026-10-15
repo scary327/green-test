@@ -1,15 +1,27 @@
-import { useCallback, useReducer } from 'react';
-import type { GreenApi, Notification } from '@/api/greenApi';
-import { chatReducer, initialChatState } from '@/lib/chatReducer';
+import { useCallback, useEffect, useReducer } from 'react';
+import type { GreenApi, HistoryMessage, Notification } from '@/api/greenApi';
+import { chatReducer } from '@/lib/chatReducer';
 import { usePolling } from '@/hooks/usePolling';
+import { loadChats, saveChats } from '@/lib/chatStorage';
+import type { Message } from '@/types/chat';
 
 function extractText(n: Notification): string | null {
   const data = n.body.messageData;
   return data?.textMessageData?.textMessage ?? data?.extendedTextMessageData?.text ?? null;
 }
 
-export function useChats(api: GreenApi) {
-  const [state, dispatch] = useReducer(chatReducer, initialChatState);
+function historyToMessage(m: HistoryMessage): Message | null {
+  const text = m.textMessage ?? m.extendedTextMessage?.text;
+  if (!text) return null; // фото, стикеры и т. п. пропускаем, по ТЗ только текст
+  return { id: m.idMessage, text, fromMe: m.type === 'outgoing', timestamp: m.timestamp };
+}
+
+export function useChats(api: GreenApi, idInstance: string) {
+  const [state, dispatch] = useReducer(chatReducer, idInstance, loadChats);
+
+  useEffect(() => {
+    saveChats(idInstance, state);
+  }, [idInstance, state]);
 
   const handleNotification = useCallback((n: Notification) => {
     const { typeWebhook, senderData, idMessage, timestamp } = n.body;
@@ -37,7 +49,31 @@ export function useChats(api: GreenApi) {
     [api],
   );
 
-  const addChat = useCallback((chatId: string) => dispatch({ type: 'ADD_CHAT', chatId }), []);
+  const addChat = useCallback(
+    async (phone: string) => {
+      const info = await api.getContactInfo(`${phone}@c.us`);
+      dispatch({
+        type: 'ADD_CHAT',
+        chatId: info.chatId,
+        name: info.name || info.contactName || phone,
+      });
+    },
+    [api],
+  );
+
+  const loadHistory = useCallback(
+    async (chatId: string) => {
+      const history = await api.getChatHistory(chatId);
+      const messages = history.map(historyToMessage).filter((m): m is Message => m !== null);
+      dispatch({ type: 'SET_HISTORY', chatId, messages });
+    },
+    [api],
+  );
+
+  useEffect(() => {
+    if (state.activeChatId) loadHistory(state.activeChatId).catch(console.error);
+  }, [state.activeChatId, loadHistory]);
+
   const selectChat = useCallback((chatId: string) => dispatch({ type: 'SET_ACTIVE', chatId }), []);
 
   return { ...state, sendMessage, addChat, selectChat };

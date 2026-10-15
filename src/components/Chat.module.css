@@ -1,0 +1,154 @@
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100dvh;
+  font-family: system-ui, sans-serif;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e5e5ea;
+  background: #fff;
+  min-height: 0;
+}
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+.sidebarHeader h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.newChat {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+.newChat input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e5e5ea;
+  border-radius: 10px;
+}
+
+.chatList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.chatItem,
+.chatItemActive {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.chatItem:hover {
+  background: #f2f2f7;
+}
+.chatItemActive {
+  background: #e8f0fe;
+}
+.chatName {
+  font-weight: 600;
+}
+.chatPreview {
+  color: #8e8e93;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #f2f2f7;
+}
+.windowHeader {
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5ea;
+  font-weight: 600;
+}
+
+.messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.message {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.mine {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.theirs {
+  align-self: flex-start;
+  background: #fff;
+  border-bottom-left-radius: 4px;
+}
+.time {
+  font-size: 11px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fff;
+  border-top: 1px solid #e5e5ea;
+}
+.composer textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px 14px;
+  border: 1px solid #e5e5ea;
+  border-radius: 18px;
+  font: inherit;
+}
+
+.error {
+  margin: 0;
+  padding: 6px 20px;
+  color: #d93025;
+  background: #fff;
+}
+.empty {
+  display: grid;
+  place-items: center;
+  color: #8e8e93;
+  background: #f2f2f7;
+}
+
+@media (max-width: 640px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

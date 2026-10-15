@@ -25,6 +25,23 @@ export interface Notification {
   };
 }
 
+export interface HistoryMessage {
+  type: 'incoming' | 'outgoing';
+  idMessage: string;
+  timestamp: number;
+  typeMessage: string;
+  chatId: string;
+  textMessage?: string;
+  extendedTextMessage?: { text: string };
+}
+
+export interface ContactInfo {
+  chatId: string;
+  name: string;
+  contactName: string;
+  username?: string;
+}
+
 export function createGreenApi({ apiUrl, idInstance, apiTokenInstance }: Credentials) {
   const api = createHttpClient(apiUrl);
   const path = (method: string, ...rest: (string | number)[]) =>
@@ -44,6 +61,10 @@ export function createGreenApi({ apiUrl, idInstance, apiTokenInstance }: Credent
       api.delete<{ result: boolean }>(path('deleteNotification', receiptId)),
 
     getStateInstance: () => api.get<{ stateInstance: string }>(path('getStateInstance')),
+    getChatHistory: (chatId: string, count = 100) =>
+      api.post<HistoryMessage[]>(path('getChatHistory'), { chatId, count }),
+
+    getContactInfo: (chatId: string) => api.post<ContactInfo>(path('getContactInfo'), { chatId }),
   };
 }
 

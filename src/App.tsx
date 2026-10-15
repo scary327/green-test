@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { createGreenApi, type Credentials } from '@/api/greenApi';
 import { LoginForm } from '@/components/LoginForm';
 import { clearCredentials, loadCredentials, saveCredentials } from '@/lib/credentialsStorage';
+import { ChatPage } from './components/ChatPage';
 
 export default function App() {
   const [credentials, setCredentials] = useState<Credentials | null>(loadCredentials);
@@ -20,9 +21,11 @@ export default function App() {
   if (!credentials || !api) return <LoginForm onLogin={handleLogin} />;
 
   return (
-    <div>
-      <button onClick={handleLogout}>Выйти</button>
-      {/* здесь будет чат, сюда передаёшь api */}
-    </div>
+    <ChatPage
+      key={credentials.idInstance}
+      api={api}
+      idInstance={credentials.idInstance}
+      onLogout={handleLogout}
+    />
   );
 }
