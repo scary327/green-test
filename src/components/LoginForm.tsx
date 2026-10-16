@@ -3,6 +3,21 @@ import { createGreenApi, type Credentials } from '@/api/greenApi';
 import { HttpError } from '@/api/http';
 import styles from './LoginForm.module.css';
 
+function getLoginError(err: unknown): string {
+  if (!(err instanceof HttpError))
+    return 'Не удалось подключиться. Проверьте apiUrl и интернет-соединение';
+  switch (err.status) {
+    case 401:
+    case 403:
+    case 404:
+      return 'Инстанс не найден: проверьте idInstance и apiTokenInstance';
+    case 429:
+      return 'Слишком много попыток. Подождите минуту и попробуйте снова';
+    default:
+      return `Ошибка сервера GREEN-API (${err.status})`;
+  }
+}
+
 interface Props {
   onLogin: (credentials: Credentials, remember: boolean) => void;
 }
@@ -33,11 +48,7 @@ export function LoginForm({ onLogin }: Props) {
       }
       onLogin(form, remember);
     } catch (err) {
-      setError(
-        err instanceof HttpError && (err.status === 401 || err.status === 403)
-          ? 'Неверный idInstance или apiTokenInstance'
-          : 'Не удалось подключиться. Проверьте apiUrl',
-      );
+      setError(getLoginError(err));
     } finally {
       setLoading(false);
     }
